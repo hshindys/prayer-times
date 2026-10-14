@@ -35,6 +35,21 @@ Item {
         var s = svc.settings;
         return s ? s.use12h !== false : true;
     }
+    readonly property bool remind: {
+        var s = svc.settings;
+        return s ? s.remind !== false : true;
+    }
+    readonly property int remindMin: {
+        var s = svc.settings;
+        var v = s && s.remindMin !== undefined ? Number(s.remindMin) : 5;
+        if (isNaN(v) || v < 1) return 1;
+        if (v > 30) return 30;
+        return Math.floor(v);
+    }
+    readonly property bool remindSound: {
+        var s = svc.settings;
+        return s ? s.remindSound !== false : true;
+    }
 
     readonly property var order: ["Fajr", "Sunrise", "Dhuhr", "Asr", "Maghrib", "Isha"]
 
@@ -46,6 +61,8 @@ Item {
     property string error: ""
     property string nextName: ""
     property int nextInSec: -1
+    // "yyyy-M-D|Name" already alerted, so the reminder fires once per prayer.
+    property string alertedFor: ""
 
     function todayKey() {
         var d = new Date();
@@ -112,6 +129,22 @@ Item {
         }
         svc.nextName = best;
         svc.nextInSec = bestSec;
+        svc.maybeAlert();
+    }
+
+    function maybeAlert() {
+        if (!svc.remind || svc.nextName === "" || svc.nextInSec <= 0) return;
+        if (svc.nextInSec > svc.remindMin * 60) return;
+        var key = svc.todayKey() + "|" + svc.nextName;
+        if (svc.alertedFor === key) return;
+        svc.alertedFor = key;
+        var title = svc.nextName + " prayer in " + svc.countdown();
+        var body = "at " + svc.fmtTime(svc.timings[svc.nextName])
+            + " · " + svc.city + ", " + svc.country;
+        Quickshell.execDetached(["notify-send", "-a", "Prayer Times", title, body]);
+        if (svc.remindSound)
+            Quickshell.execDetached(["paplay",
+                "/usr/share/sounds/freedesktop/stereo/bell.oga"]);
     }
 
     function countdown() {

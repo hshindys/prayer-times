@@ -10,7 +10,13 @@ refresh. Not official, not reviewed by Ryoku.
 - `bin/prayers <city> <country> <method> <school>` (python3, no third-party
   modules): one HTTPS GET per day to `https://api.aladhan.com/v1/timingsByCity`.
   No key, no account. The user agent is `ryoku-prayer-times/1.0`.
-- External command used: `python3` (declared in `dependencies.commands`).
+- `notify-send -a "Prayer Times" ...`: one desktop notification per prayer,
+  fired when the countdown reaches the configured minutes-before (default 5).
+  Fires once per prayer per day.
+- `paplay /usr/share/sounds/freedesktop/stereo/bell.oga`: the alert bell,
+  only together with the notification and only when the sound toggle is on.
+- External commands used: `python3`, `notify-send`, `paplay` (all declared
+  in `dependencies.commands`).
 
 ## What it reads
 
