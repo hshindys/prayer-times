@@ -1,51 +1,39 @@
-# Prayer Times
+# Prayer Times (prayer-times)
 
-A Ryoku shell plugin (`prayer-times`). This scaffold is a working demo: a counter that
-ticks once a second, a mark on the bar, and a panel with a RESET button. Edit it
-into your own widget.
+A Ryoku bar widget (`topbarGlyph`): a crescent mark with the next prayer and
+a live countdown. Click opens a panel with today's six times
+(Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha), the Hijri date, and a manual
+refresh. Not official, not reviewed by Ryoku.
 
-## What it does
+## What runs
 
-- **Service** (`service/Main.qml`): the logic, no UI. Holds the live state the
-  views read through `pluginApi.mainInstance`.
-- **Widget** (`content/Widget.qml`): the one view the host mounts. A left click
-  toggles the panel; it never changes state.
-- **Panel** (`content/Panel.qml`): the bar panel the host renders under the
-  glyph when this plugin is on the bar.
+- `bin/prayers <city> <country> <method> <school>` (python3, no third-party
+  modules): one HTTPS GET per day to `https://api.aladhan.com/v1/timingsByCity`.
+  No key, no account. The user agent is `ryoku-prayer-times/1.0`.
+- External command used: `python3` (declared in `dependencies.commands`).
 
-## What it reads and writes
+## What it reads
 
-The demo reads nothing off the machine and writes nothing. When you add real
-behaviour, keep to the rules in `AGENTS.md`: read settings through
-`pluginApi.pluginSettings` behind a default, write them only through
-`pluginApi.saveSetting(key, value)`, and write files only under
-`pluginApi.stateDir`. Every external command belongs in `bin/` or in
-`dependencies.commands`; every host you contact belongs in
-`capabilities.network`; a privileged action runs only through `pkexec` listed in
-`capabilities.privileged`.
+- Its own settings (`city`, `country`, `method`, `school`, `use12h`) via
+  `pluginApi.pluginSettings` — city/country/method/school also travel as
+  argv to `bin/prayers`, never through a shell string (argv array, no `sh -c`).
+- Nothing else on the system. No privileged commands, no pkexec, no sudo.
 
-## Settings
+## What it writes
 
-| key       | type   | default | description         |
-| --------- | ------ | ------- | ------------------- |
-| showCount | toggle | true    | Show the tick count |
+- Day cache: `$XDG_CACHE_HOME/ryoku/plugins/prayer-times/timings.json`
+  (one small JSON file). On network failure the widget serves this cache and
+  marks itself stale instead of going blank.
+- Settings only through `pluginApi.saveSetting` (the bar's Community page).
+  Never touches `shell.json`, `plugins.json`, or anything outside its own
+  cache dir.
 
-## Preview
+## Network capability
 
-Capture a real screenshot of the widget and save it as
-`assets/preview-widget.png`, then list it under `files` in `manifest.json`. The
-store shows it in the catalogue.
+- `api.aladhan.com` (declared in `capabilities.network`). That is the only
+  host contacted.
 
-## Build, check, install
+## Cost
 
-```
-ryoku plugin validate .
-ryoku plugin add . --bar --yes
-```
-
-It lists under **Community** in QS Bar Settings. Publish it only when you want
-to share it: `ryoku plugin share prayer-times`.
-
-## Author
-
-hshindys <hshindys@users.noreply.github.com>: this plugin is community-made (`official` is false).
+One request a day plus a local 20-second countdown tick. No polling, no
+background traffic.
